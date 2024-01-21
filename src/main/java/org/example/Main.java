@@ -1,58 +1,154 @@
 package org.example;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.URL;
+import java.awt.*;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import javax.net.ssl.HttpsURLConnection;
 
-public class HttpsRequest {
+public class Main {
+    private static final String filePath = "data.txt";
+    private static todolistGUI gui;
 
-    public static String urlRequest(String urlString) throws IOException {
-        HttpsURLConnection urlConnection = getHttpsURLConnection(urlString);
-        String responseBody = null;
+    public static void main(String[] args) {
+        gui = new todolistGUI();
+    }
 
-        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()))) {
-            StringBuilder response = new StringBuilder();
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-                response.append(line);
+    public static void checkAppUpdate() {
+        String result = null;
+        File dataFile = new File(filePath);
+        if (!dataFile.exists()) {
+            return;
+        }
+        Scanner scanner = null;
+        try {
+            scanner = new Scanner(dataFile);
+            if (!scanner.hasNextLine()) {
+                return;
             }
-            responseBody = response.toString();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        while (scanner.hasNextLine()) {
+            String[] data = scanner.nextLine().split("\\|");
+            if (data.length != 2) {
+                continue;
+            }
+            try {
+                result = HttpsRequest.getDataBundleID(data[0]);
+                System.out.println("Response: " + result);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            if (regex("\"resultCount\":(.*?),", result).equals("0")) {
+                gui.addInfoPanel("Not found", data[0], data[1], "Not found", null);
+                continue;
+            }
+            String newVersion = regex("\"version\":\"(.*?)\"", result);
+            if (newVersion != null && !newVersion.equals(data[1])) {
+                String appName = regex("\"trackName\":\"(.*?)\"", result);
+                Image image;
+                try {
+                    image = HttpsRequest.getImage(regex("\"artworkUrl60\":\"(.*?)\"", result));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                gui.addInfoPanel(appName, data[0], data[1], newVersion, image);
+            }
+        }
+    }
+
+    public static String regex(String regex, String input) {
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(input);
+        if (matcher.find() ) {
+            if (regex.equals("\\d+")) {
+                StringBuilder resultBuilder = new StringBuilder(matcher.group());
+                while (matcher.find()) {
+                    resultBuilder.append(matcher.group());
+                }
+                return resultBuilder.toString();
+            }
+            return matcher.group(1);
+        }
+        return null;
+    }
+
+    public static void addApp(String bundleID, String version) {
+        if (bundleID.isEmpty() || version.isEmpty()) {
+            return;
+        }
+        try {
+            String currentDirectory = System.getProperty("user.dir");
+            File file = new File(currentDirectory, filePath);
+            if (!file.exists()) {
+                if (file.createNewFile()) {
+                    writeToFile(file, bundleID + "|" + version);
+                }
+            } else if (!isBundleIDExist(file, bundleID)) {
+                writeToFile(file, "\n" + bundleID + "|" + version);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        return responseBody;
     }
 
-    private static HttpsURLConnection getHttpsURLConnection(String urlString) throws IOException {
-        URL url = new URL(urlString);
-        HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
-        urlConnection.setDoOutput(true);
-        urlConnection.setRequestMethod("GET");
-        urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-
-        // write out form parameters (if needed)
-        try (PrintWriter out = new PrintWriter(urlConnection.getOutputStream())) {
-            // out.println("param1=value1&param2=value2");
+    private static boolean isBundleIDExist(File file, String bundleID) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split("\\|");
+                if (parts.length > 0 && parts[0].equals(bundleID)) {
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-
-        // set connection timeout
-        urlConnection.setConnectTimeout(5000); // 5 seconds timeout
-
-        // connect
-        urlConnection.connect();
-
-        return urlConnection;
+        return false;
     }
 
-    public static void main(String[] args) {
+
+    public static void doneApp(String bundlID, String oldVersion, String newVersion) {
+        String fileContent = null;
         try {
-            String result = urlRequest("https://example.com");
-            System.out.println("Response: " + result);
+            fileContent = new String(Files.readAllBytes(Paths.get(filePath)));
+            String updatedContent = fileContent.replace(bundlID + "|" + oldVersion, bundlID + "|" + newVersion);
+            Files.write(Paths.get(filePath), updatedContent.getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void deleteApp(String bundlID, String version) {
+        String fileContent = null;
+        try {
+            fileContent = new String(Files.readAllBytes(Paths.get(filePath)));
+            String updatedContent = fileContent.replace(bundlID + "|" + version, "");
+            Files.write(Paths.get(filePath), updatedContent.getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void editApp(String bundlID, String version, String newBundleID, String newVersion) {
+        String fileContent = null;
+        try {
+            fileContent = new String(Files.readAllBytes(Paths.get(filePath)));
+            String updatedContent = fileContent.replace(bundlID + "|" + version, newBundleID + "|" + newVersion);
+            Files.write(Paths.get(filePath), updatedContent.getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void writeToFile(File file, String content) {
+        try (FileWriter writer = new FileWriter(file, true)) {
+            writer.write(content);
         } catch (IOException e) {
             e.printStackTrace();
         }

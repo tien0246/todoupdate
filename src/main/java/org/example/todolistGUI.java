@@ -1,58 +1,175 @@
 package org.example;
 
 import javax.swing.*;
+import javax.swing.border.AbstractBorder;
+import javax.swing.border.Border;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.RoundRectangle2D;
+import java.awt.datatransfer.StringSelection;
+
+import static org.example.Main.checkAppUpdate;
+
 public class todolistGUI extends JFrame {
-    private JButton button1;
-    private JButton button2;
+
+    private JButton checkButton;
+    private JButton saveButton;
     private JPanel datapane;
     private JScrollPane sroll;
     private JPanel mainpane;
+    private JButton addButton;
+    private JButton refreshButton;
+    private int countApp = 0;
 
     public todolistGUI() {
-        super("To Do List");
-        this.setSize(500, 500);
+        super("To Do Update List");
+        this.setSize(1200, 540);
         this.setContentPane(mainpane);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        //        this.pack();
+        this.setResizable(false);
         this.setVisible(true);
+        int x = (int) ((Toolkit.getDefaultToolkit().getScreenSize().getWidth() - this.getWidth()) / 2);
+        int y = (int) ((Toolkit.getDefaultToolkit().getScreenSize().getHeight() - this.getHeight()) / 2);
+        this.setLocation(x, y);
+        sroll.getVerticalScrollBar().setUnitIncrement(16);
 
+        checkButton.addActionListener(actionEvent -> checkAppUpdate());
+        addButton.addActionListener(actionEvent -> {
+            addGUI addGUI = new addGUI("", "", feature.ADD);
+            addGUI.setVisible(true);
+            refreshGUI();
+        });
 
-        for (int i = 0; i < 3; i++) {
-            JPanel panel = createInfoPanel("Row " + (i + 1));
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.gridx = i % 3;
-            gbc.gridy = i / 3;
-            gbc.insets = new Insets(10, 10, 10, 10);
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            gbc.weightx = 1.0;
-            datapane.add(panel, gbc);
-        }
-        addInfoPanel("Facebook", "com.facebook.Facebook", "1.0", "2.0");
-
-    }
-    private JPanel createInfoPanel(String info) {
-        JPanel panel = new JPanel();
-        panel.setBackground(new Color(240, 240, 240));
-        //        panel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        //        panel.setPreferredSize(new Dimension(200, 100));
-
-        JLabel label = new JLabel(info);
-        //        label.setFont(new Font("Arial", Font.BOLD, 14));
-        panel.add(label);
-
-        return panel;
+        refreshButton.addActionListener(actionEvent -> {
+            refreshGUI();
+        });
+        saveButton.addActionListener(actionEvent -> JOptionPane.showMessageDialog(null, "No feature yet :)"));
     }
 
-    public void addInfoPanel(String appName, String bundleID, String oldVersion, String newVersion) {
-        infoPanel panel = new infoPanel(appName, bundleID, oldVersion, newVersion);
-        panel.setSize(200, 100);
+    public void addInfoPanel(String appName, String bundleID, String oldVersion, String newVersion, Image image) {
+        infoPanel panel = new infoPanel(appName, bundleID, oldVersion, newVersion, image);
+        JPanel contentPane = panel.getContentPane();
         GridBagConstraints gbc = new GridBagConstraints();
-        //        gbc.gridx = 0;
-        //        gbc.gridy = GridBagConstraints.RELATIVE;
-        //        gbc.insets = new Insets(10, 10, 10, 10);
-        //        gbc.fill = GridBagConstraints.HORIZONTAL;
-        //        gbc.weightx = 1.0;
-        datapane.add(panel, gbc);
+        gbc.gridx = countApp % 3;
+        gbc.gridy = countApp / 3;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        datapane.add(contentPane, gbc);
+        validate();
+        repaint();
+        countApp++;
     }
+
+    public void removeAllInfoPanel() {
+        datapane.removeAll();
+        countApp = 0;
+        validate();
+        repaint();
+    }
+
+    private void refreshGUI() {
+        removeAllInfoPanel();
+        checkAppUpdate();
+    }
+
+    public static class infoPanel extends JPanel {
+        private JPanel contentPane;
+        private JLabel image;
+        private JLabel bundleID;
+        private JLabel oldVersion;
+        private JLabel newVersion;
+        private JLabel name;
+        private JButton doneButton;
+        private JButton deleteButton;
+        private JButton editButton;
+
+        public infoPanel(String appName, String bundleID, String oldVersion, String newVersion, Image image) {
+            this.name.setToolTipText(appName);
+            this.name.setText(appName);
+            this.bundleID.setToolTipText(bundleID);
+            this.bundleID.setText(bundleID);
+            this.oldVersion.setText(oldVersion);
+            this.newVersion.setText(newVersion);
+            if (image == null) {
+                image = new ImageIcon("src/main/java/icons/notfound.png").getImage();
+            }
+            this.image.setIcon(new ImageIcon(image));
+            doneButton.addActionListener(actionEvent -> {
+                Main.doneApp(bundleID, oldVersion, newVersion);
+                contentPane.removeAll();
+                contentPane.revalidate();
+                contentPane.repaint();
+            });
+            deleteButton.addActionListener(actionEvent -> {
+                Main.deleteApp(bundleID, oldVersion);
+                contentPane.removeAll();
+                contentPane.revalidate();
+                contentPane.repaint();
+            });
+            editButton.addActionListener(actionEvent -> edit());
+            this.bundleID.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent mouseEvent) {
+                    super.mouseClicked(mouseEvent);
+                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(bundleID), null);
+                }
+            });
+            this.name.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent mouseEvent) {
+                    super.mouseClicked(mouseEvent);
+                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(appName), null);
+                }
+            });
+        }
+
+        private void edit() {
+            addGUI addGUI = new addGUI(bundleID.getText(), oldVersion.getText(), feature.EDIT);
+            String tempBundleID = bundleID.getText();
+            String tempVer = oldVersion.getText();
+            addGUI.setVisible(true);
+            this.bundleID.setText(addGUI.bundleid.getText());
+            this.oldVersion.setText(addGUI.version.getText());
+            Main.editApp(tempBundleID, tempVer, addGUI.bundleid.getText(), addGUI.version.getText());
+        }
+
+        public JPanel getContentPane() {
+            Border roundBorder = new RoundBorder(10, Color.BLACK);
+            contentPane.setBorder(roundBorder);
+            doneButton.setIcon(new ImageIcon("src/main/java/icons/done.png"));
+            deleteButton.setIcon(new ImageIcon("src/main/java/icons/delete.png"));
+            editButton.setIcon(new ImageIcon("src/main/java/icons/edit.png"));
+            return contentPane;
+        }
+    }
+
+    static class RoundBorder extends AbstractBorder {
+        private final int radius;
+        private final Color color;
+
+        public RoundBorder(int radius, Color color) {
+            this.radius = radius;
+            this.color = color;
+        }
+
+        @Override
+        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.setColor(color);
+            g2d.draw(new RoundRectangle2D.Double(x, y, width - 1, height - 1, radius * 2, radius * 2));
+        }
+
+        @Override
+        public Insets getBorderInsets(Component c) {
+            return new Insets(radius, radius, radius, radius);
+        }
+
+        @Override
+        public boolean isBorderOpaque() {
+            return true;
+        }
+    }
+
 }
