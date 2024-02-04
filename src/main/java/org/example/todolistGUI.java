@@ -97,7 +97,7 @@ public class todolistGUI extends JFrame {
             }
             this.image.setIcon(new ImageIcon(image));
             doneButton.addActionListener(actionEvent -> {
-                Main.doneApp(bundleID, oldVersion, newVersion);
+                Main.doneApp(bundleID, oldVersion, newVersion.split(" ")[0].replace("(", "").replace(")", ""));
                 contentPane.removeAll();
                 contentPane.revalidate();
                 contentPane.repaint();

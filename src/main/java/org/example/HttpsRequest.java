@@ -17,7 +17,8 @@ public class HttpsRequest {
     public static String getDataBundleID(String bundleID) throws IOException {
         String[] stores = {"us", "vn", "ph", "jp", "kr", "tw"};
         String maxResult = null;
-        int maxVersion = Integer.MIN_VALUE;
+//        int maxVersion = Integer.MIN_VALUE;
+        String maxVersion = "0.0.0.0";
         int count = 0;
         for (String store : stores) {
             if (count == 2) {
@@ -28,21 +29,47 @@ public class HttpsRequest {
                 continue;
             }
             String versionString = regex("\"version\":\"(.*?)\"", result);
-            System.out.println("Version: " + versionString);
-            String versionDigits = regex("\\d+", versionString);
-            System.out.println("Version: " + versionDigits);
-            int version = Integer.parseInt(Objects.requireNonNull(versionDigits));
-            if (version == maxVersion) {
-                count++;
-            }
-
-            if (version > maxVersion) {
-                maxVersion = version;
+//            String versionDigits = regex("\\d+", versionString);
+//            int version = Integer.parseInt(Objects.requireNonNull(versionDigits));
+//            if (version == maxVersion) {
+//                count++;
+//            }
+//
+//            if (version > maxVersion) {
+//                maxVersion = version;
+//                maxResult = result;
+//                count = 0;
+//            }
+            if (compareVersions(versionString, maxVersion)) {
+                maxVersion = versionString;
                 maxResult = result;
                 count = 0;
+            } else {
+                count++;
             }
         }
         return maxResult;
+    }
+
+    private static boolean compareVersions(String version1, String version2) {
+        String[] parts1 = version1.split("\\.");
+        String[] parts2 = version2.split("\\.");
+
+        int minLength = Math.min(parts1.length, parts2.length);
+
+        for (int i = 0; i < minLength; i++) {
+            int num1 = Integer.parseInt(parts1[i]);
+            int num2 = Integer.parseInt(parts2[i]);
+
+            if (num1 > num2) {
+                return true;
+            } else if (num1 < num2) {
+                return false;
+            }
+        }
+
+        // Nếu các phần số giống nhau, phiên bản có nhiều phần số sẽ lớn hơn
+        return parts1.length > parts2.length;
     }
 
     private static String getDataBundleID(String bundleID, String country) throws IOException {

@@ -5,6 +5,9 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,7 +52,12 @@ public class Main {
                 continue;
             }
             String newVersion = regex("\"version\":\"(.*?)\"", result);
+            String dateString = regex("\"currentVersionReleaseDate\":\"(.*?)\"", result);
+            LocalDateTime specifiedDateTime = LocalDateTime.parse(dateString, DateTimeFormatter.ISO_DATE_TIME);
+            LocalDateTime currentDateTime = LocalDateTime.now();
+            Duration duration = Duration.between(currentDateTime, specifiedDateTime.plusDays(7));
             if (newVersion != null && !newVersion.equals(data[1])) {
+                newVersion += " (" + duration.toDays() + " days left)";
                 String appName = regex("\"trackName\":\"(.*?)\"", result);
                 Image image;
                 try {
