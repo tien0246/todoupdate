@@ -14,61 +14,39 @@ import static org.example.Main.regex;
 
 public class HttpsRequest {
 
-    public static String getDataBundleID(String bundleID) throws IOException {
-        String[] stores = {"us", "vn", "ph", "jp", "kr", "tw"};
+    public static String getDataBundleID(String bundleID, String[] stores) throws IOException {
         String maxResult = null;
-//        int maxVersion = Integer.MIN_VALUE;
         String maxVersion = "0.0.0.0";
-        int count = 0;
         for (String store : stores) {
-            if (count == 2) {
-                break;
-            }
             String result = getDataBundleID(bundleID, store);
+            System.out.println("Response: " + result);
             if (Objects.equals(regex("\"resultCount\":(.*?),", result), "0")) {
                 continue;
             }
             String versionString = regex("\"version\":\"(.*?)\"", result);
-//            String versionDigits = regex("\\d+", versionString);
-//            int version = Integer.parseInt(Objects.requireNonNull(versionDigits));
-//            if (version == maxVersion) {
-//                count++;
-//            }
-//
-//            if (version > maxVersion) {
-//                maxVersion = version;
-//                maxResult = result;
-//                count = 0;
-//            }
             if (compareVersions(versionString, maxVersion)) {
                 maxVersion = versionString;
                 maxResult = result;
-                count = 0;
-            } else {
-                count++;
             }
         }
         return maxResult;
     }
 
     private static boolean compareVersions(String version1, String version2) {
+        version1 = version1.replaceAll("\\(.*?\\)", "");
+        version2 = version2.replaceAll("\\(.*?\\)", "");
         String[] parts1 = version1.split("\\.");
         String[] parts2 = version2.split("\\.");
 
         int minLength = Math.min(parts1.length, parts2.length);
 
         for (int i = 0; i < minLength; i++) {
-            int num1 = Integer.parseInt(parts1[i]);
-            int num2 = Integer.parseInt(parts2[i]);
-
-            if (num1 > num2) {
+            if (Integer.parseInt(parts1[i]) > Integer.parseInt(parts2[i])) {
                 return true;
-            } else if (num1 < num2) {
+            } else if (Integer.parseInt(parts1[i]) < Integer.parseInt(parts2[i])) {
                 return false;
             }
         }
-
-        // Nếu các phần số giống nhau, phiên bản có nhiều phần số sẽ lớn hơn
         return parts1.length > parts2.length;
     }
 
@@ -84,7 +62,7 @@ public class HttpsRequest {
             }
             responseBody = response.toString();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Error: " + e.getMessage());
         } finally {
             urlConnection.disconnect();
         }
@@ -97,7 +75,7 @@ public class HttpsRequest {
         try (InputStream in = urlConnection.getInputStream()) {
             image = ImageIO.read(in);
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Error: " + e.getMessage());
         } finally {
             urlConnection.disconnect();
         }

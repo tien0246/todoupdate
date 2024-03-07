@@ -4,10 +4,10 @@ import javax.swing.*;
 import javax.swing.border.AbstractBorder;
 import javax.swing.border.Border;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
-import java.awt.datatransfer.StringSelection;
 
 import static org.example.Main.checkAppUpdate;
 
@@ -15,9 +15,9 @@ public class todolistGUI extends JFrame {
 
     private JButton checkButton;
     private JButton saveButton;
-    private JPanel datapane;
-    private JScrollPane sroll;
-    private JPanel mainpane;
+    private JPanel dataPanel;
+    private JScrollPane scroll;
+    private JPanel mainPanel;
     private JButton addButton;
     private JButton refreshButton;
     private int countApp = 0;
@@ -25,14 +25,14 @@ public class todolistGUI extends JFrame {
     public todolistGUI() {
         super("To Do Update List");
         this.setSize(1200, 540);
-        this.setContentPane(mainpane);
+        this.setContentPane(mainPanel);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setResizable(false);
         this.setVisible(true);
         int x = (int) ((Toolkit.getDefaultToolkit().getScreenSize().getWidth() - this.getWidth()) / 2);
         int y = (int) ((Toolkit.getDefaultToolkit().getScreenSize().getHeight() - this.getHeight()) / 2);
         this.setLocation(x, y);
-        sroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
 
         checkButton.addActionListener(actionEvent -> checkAppUpdate());
         addButton.addActionListener(actionEvent -> {
@@ -41,9 +41,7 @@ public class todolistGUI extends JFrame {
             refreshGUI();
         });
 
-        refreshButton.addActionListener(actionEvent -> {
-            refreshGUI();
-        });
+        refreshButton.addActionListener(actionEvent -> refreshGUI());
         saveButton.addActionListener(actionEvent -> JOptionPane.showMessageDialog(null, "No feature yet :)"));
     }
 
@@ -56,14 +54,17 @@ public class todolistGUI extends JFrame {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
-        datapane.add(contentPane, gbc);
-        validate();
-        repaint();
+        dataPanel.add(contentPane, gbc);
         countApp++;
     }
 
+    public void reloadGUI() {
+        validate();
+        repaint();
+    }
+
     public void removeAllInfoPanel() {
-        datapane.removeAll();
+        dataPanel.removeAll();
         countApp = 0;
         validate();
         repaint();
@@ -97,7 +98,7 @@ public class todolistGUI extends JFrame {
             }
             this.image.setIcon(new ImageIcon(image));
             doneButton.addActionListener(actionEvent -> {
-                Main.doneApp(bundleID, oldVersion, newVersion.split(" ")[0].replace("(", "").replace(")", ""));
+                Main.doneApp(bundleID, oldVersion, newVersion.split(" ")[0]);
                 contentPane.removeAll();
                 contentPane.revalidate();
                 contentPane.repaint();
@@ -109,6 +110,7 @@ public class todolistGUI extends JFrame {
                 contentPane.repaint();
             });
             editButton.addActionListener(actionEvent -> edit());
+
             this.bundleID.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent mouseEvent) {
@@ -130,9 +132,10 @@ public class todolistGUI extends JFrame {
             String tempBundleID = bundleID.getText();
             String tempVer = oldVersion.getText();
             addGUI.setVisible(true);
-            this.bundleID.setText(addGUI.bundleid.getText());
+            this.bundleID.setText(addGUI.bundleId.getText());
             this.oldVersion.setText(addGUI.version.getText());
-            Main.editApp(tempBundleID, tempVer, addGUI.bundleid.getText(), addGUI.version.getText());
+            String countrySelected = addGUI.getCountryCodesSelected();
+            Main.editApp(tempBundleID, tempVer, addGUI.bundleId.getText(), addGUI.version.getText(), countrySelected);
         }
 
         public JPanel getContentPane() {
