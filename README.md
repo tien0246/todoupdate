@@ -3,4 +3,4 @@
 # Feature
  Click to bundleID or name to copy
  
- Custom country app
+ Custom country app. If you don't choose, defaut is US
