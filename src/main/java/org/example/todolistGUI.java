@@ -1,5 +1,7 @@
 package org.example;
 
+import javafx.scene.Parent;
+
 import javax.swing.*;
 import javax.swing.border.AbstractBorder;
 import javax.swing.border.Border;
@@ -58,9 +60,27 @@ public class todolistGUI extends JFrame {
         countApp++;
     }
 
+    public void addBlankPanel() {
+        while (countApp % 3 != 0) {
+            JPanel panel = new JPanel();
+            panel.setPreferredSize(new Dimension(300, 0));
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.gridx = countApp % 3;
+            gbc.gridy = countApp / 3;
+            gbc.insets = new Insets(5, 5, 5, 5);
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            gbc.weightx = 1.0;
+            dataPanel.add(panel, gbc);
+            countApp++;
+        }
+    }
+
     public void reloadGUI() {
         validate();
         repaint();
+        if (countApp == 0) {
+            JOptionPane.showMessageDialog(null, "All apps are up to date! \nLet's chill ~_~");
+        }
     }
 
     public void removeAllInfoPanel() {

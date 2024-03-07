@@ -2,18 +2,18 @@ package org.example;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
 
 enum feature {
     ADD, EDIT
 }
+
 public class addGUI extends JDialog {
 
     private final feature currentFeature;
+    private final List<JCheckBox> controlList = new ArrayList<>();
     JTextField version;
     JTextField bundleId;
     private JPanel contentPane;
@@ -21,7 +21,7 @@ public class addGUI extends JDialog {
     private JButton buttonCancel;
     private JPanel countryPanel;
     private JScrollPane scrollPanel;
-    private final List<JCheckBox> controlList = new ArrayList<>();
+    private JTextField searchCountry;
 
 
     public addGUI(String bundleID, String version, feature f) {
@@ -71,6 +71,20 @@ public class addGUI extends JDialog {
 
         // call onCancel() on ESCAPE
         contentPane.registerKeyboardAction(e -> onCancel(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        searchCountry.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent keyEvent) {
+                super.keyReleased(keyEvent);
+                String search = searchCountry.getText().toLowerCase();
+                for (JCheckBox checkBox : controlList) {
+                    if (checkBox.getText().toLowerCase().contains(search)) {
+                        checkBox.setVisible(true);
+                    } else {
+                        checkBox.setVisible(false);
+                    }
+                }
+            }
+        });
     }
 
     private void onOK() {

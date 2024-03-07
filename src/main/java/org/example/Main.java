@@ -1,5 +1,9 @@
 package org.example;
 
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+
 import java.awt.*;
 import java.io.*;
 import java.nio.file.Files;
@@ -9,7 +13,6 @@ import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -75,6 +78,7 @@ public class Main {
                 gui.addInfoPanel(appName, data[0], data[1], newVersion, image);
             }
         }
+        gui.addBlankPanel();
         gui.reloadGUI();
     }
 
